@@ -1,0 +1,17 @@
+{
+  "name": "proc-indexer",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Read-only semantic indexer for large PROC process JSON files",
+  "type": "module",
+  "bin": {
+    "proc-index": "./src/cli.mjs"
+  },
+  "scripts": {
+    "index": "node ./src/cli.mjs",
+    "patch": "node ./src/patch.mjs"
+  },
+  "dependencies": {
+    "jsonc-parser": "^3.3.1"
+  }
+}

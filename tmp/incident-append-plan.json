@@ -1,0 +1,17 @@
+﻿{
+    "schemaVersion":  1,
+    "fileSha256":  "f6b5f1065879b273fb1b23115c1e85bca81fd436f38f50e9a6344aeeb041f829",
+    "operations":  [
+                       {
+                           "op":  "append",
+                           "target":  {
+                                          "path":  "tabConfig"
+                                      },
+                           "value":  {
+                                         "id":  "tmp-tab-id",
+                                         "tabName":  "Temporary Test Tab",
+                                         "tabAlias":  "tmp"
+                                     }
+                       }
+                   ]
+}

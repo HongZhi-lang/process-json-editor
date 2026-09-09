@@ -1,0 +1,530 @@
+{
+  "schemaVersion": 1,
+  "file": {
+    "path": "E:\\work\\process-json-editor\\StandardProcess\\Incident Management\\process_main_Incident Management\\PROC_cfc4be9658854fbb9fc460817eb06ee0.json",
+    "bytes": 227301,
+    "sha256": "f6b5f1065879b273fb1b23115c1e85bca81fd436f38f50e9a6344aeeb041f829",
+    "md5": "80bd57223de9dcc7da5c63709406b5a2",
+    "encoding": "utf8",
+    "newline": "none"
+  },
+  "process": {
+    "id": "cfc4be9658854fbb9fc460817eb06ee0",
+    "name": "Incident Management",
+    "type": "FAULT",
+    "firstNodeId": "UserTask_0narh6z",
+    "xmlLength": 4139,
+    "xmlElementCount": 11,
+    "sequenceFlowCount": 4
+  },
+  "nodes": [
+    {
+      "id": "UserTask_0eepxld",
+      "name": "In Progress",
+      "type": "USER_TASK",
+      "xml": {
+        "type": "userTask",
+        "name": "In Progress"
+      },
+      "incoming": [
+        "SequenceFlow_00bfz4q"
+      ],
+      "outgoing": [
+        "SequenceFlow_0ijvevi"
+      ],
+      "gatewayLines": [],
+      "formId": "271768b4b7dc4606ae73e1782d95642e",
+      "formGroups": [
+        "basicInfo",
+        "ADD_GROUP_J8XtwFfmOb",
+        "CMDB_DATA_MHZlcvkxUu",
+        "CMDB_DATA_MHZlcvkxUu|cyv6x592spnIE",
+        "ADD_GROUP_UdkmVH0xBq",
+        "ADD_GROUP_9iFulpf674",
+        "ADD_GROUP_EujjQe3Vvl",
+        "ADD_GROUP_tOwSH6BMUG",
+        "ADD_GROUP_5rXcin8TH7",
+        "ADD_GROUP_ue87xKVskr"
+      ],
+      "tabIds": [
+        "d1fe9e2c351e430eafde6141cc0bdf1f",
+        "5a15825828894519ad8ca60eca831fa2",
+        "a571ae5bf686420e95f7066d6e39ff9f",
+        "c0df1107ca654c2fac7742ceebf20463",
+        "30fe2c7cf683440a952ec63f671f1e60",
+        "926a4fe0657446b4a3ec5a0d643207da"
+      ]
+    },
+    {
+      "id": "UserTask_07na7cp",
+      "name": "Resolved",
+      "type": "USER_TASK",
+      "xml": {
+        "type": "userTask",
+        "name": "Resolved"
+      },
+      "incoming": [
+        "SequenceFlow_0ijvevi"
+      ],
+      "outgoing": [
+        "SequenceFlow_0yesck1"
+      ],
+      "gatewayLines": [],
+      "formId": "271768b4b7dc4606ae73e1782d95642e",
+      "formGroups": [
+        "basicInfo",
+        "ADD_GROUP_J8XtwFfmOb",
+        "CMDB_DATA_MHZlcvkxUu",
+        "CMDB_DATA_MHZlcvkxUu|cyv6x592spnIE",
+        "ADD_GROUP_UdkmVH0xBq",
+        "ADD_GROUP_9iFulpf674",
+        "ADD_GROUP_EujjQe3Vvl",
+        "ADD_GROUP_tOwSH6BMUG",
+        "ADD_GROUP_5rXcin8TH7",
+        "ADD_GROUP_ue87xKVskr"
+      ],
+      "tabIds": [
+        "d1fe9e2c351e430eafde6141cc0bdf1f",
+        "11a11a88fd16456fb6f745c9e3f99f94",
+        "5a15825828894519ad8ca60eca831fa2",
+        "a571ae5bf686420e95f7066d6e39ff9f",
+        "c0df1107ca654c2fac7742ceebf20463",
+        "30fe2c7cf683440a952ec63f671f1e60",
+        "0885561073e148b39aa553ee2b414d01",
+        "926a4fe0657446b4a3ec5a0d643207da",
+        "c9b8d98f50f547dd90cee6425e430444"
+      ]
+    },
+    {
+      "id": "EndEvent_0jk9aya",
+      "name": "End node",
+      "type": "END_TASK",
+      "xml": {
+        "type": "endEvent",
+        "name": null
+      },
+      "incoming": [
+        "SequenceFlow_0yesck1"
+      ],
+      "outgoing": [],
+      "gatewayLines": [],
+      "formId": "271768b4b7dc4606ae73e1782d95642e",
+      "formGroups": [
+        "basicInfo",
+        "ADD_GROUP_J8XtwFfmOb",
+        "CMDB_DATA_MHZlcvkxUu",
+        "CMDB_DATA_MHZlcvkxUu|cyv6x592spnIE",
+        "ADD_GROUP_UdkmVH0xBq",
+        "ADD_GROUP_9iFulpf674",
+        "ADD_GROUP_EujjQe3Vvl",
+        "ADD_GROUP_tOwSH6BMUG",
+        "ADD_GROUP_5rXcin8TH7",
+        "ADD_GROUP_ue87xKVskr"
+      ],
+      "tabIds": [
+        "5a15825828894519ad8ca60eca831fa2",
+        "a571ae5bf686420e95f7066d6e39ff9f",
+        "c0df1107ca654c2fac7742ceebf20463",
+        "30fe2c7cf683440a952ec63f671f1e60",
+        "926a4fe0657446b4a3ec5a0d643207da",
+        "0885561073e148b39aa553ee2b414d01",
+        "d1fe9e2c351e430eafde6141cc0bdf1f",
+        "11a11a88fd16456fb6f745c9e3f99f94"
+      ]
+    },
+    {
+      "id": "UserTask_0narh6z",
+      "name": "New",
+      "type": "USER_TASK",
+      "xml": {
+        "type": "userTask",
+        "name": "New"
+      },
+      "incoming": [
+        "SequenceFlow_0koldoc"
+      ],
+      "outgoing": [
+        "SequenceFlow_00bfz4q"
+      ],
+      "gatewayLines": [],
+      "formId": "271768b4b7dc4606ae73e1782d95642e",
+      "formGroups": [
+        "basicInfo",
+        "ADD_GROUP_J8XtwFfmOb",
+        "CMDB_DATA_MHZlcvkxUu",
+        "CMDB_DATA_MHZlcvkxUu|cyv6x592spnIE",
+        "ADD_GROUP_UdkmVH0xBq",
+        "ADD_GROUP_9iFulpf674",
+        "ADD_GROUP_EujjQe3Vvl",
+        "ADD_GROUP_tOwSH6BMUG",
+        "ADD_GROUP_5rXcin8TH7",
+        "ADD_GROUP_ue87xKVskr"
+      ],
+      "tabIds": [
+        "d1fe9e2c351e430eafde6141cc0bdf1f",
+        "5a15825828894519ad8ca60eca831fa2",
+        "30fe2c7cf683440a952ec63f671f1e60",
+        "c9b8d98f50f547dd90cee6425e430444"
+      ]
+    }
+  ],
+  "fields": [
+    {
+      "code": "basicInfo",
+      "name": "Basic Information",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "title",
+      "name": "Ticket title",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "MEMBER_1hzCDlEM60Spe",
+      "name": "Caller",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "MEMBER_MYluOc9yBZl9E",
+      "name": "Affected User",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "INPUT_zmIcTqshHiiZ4X",
+      "name": "Caller Contact",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "SELECT_VUKGEDUFN7NgL",
+      "name": "Source",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "INPUT_OAU6Jv8Auyo5HS",
+      "name": "Short Description",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "TEXTAREA_JbrkI20NBG0",
+      "name": "Description",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "TEXTAREA_K8MRWmNn6GX",
+      "name": " Work Notes",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "TEXTAREA_gNw86Ix04Ry",
+      "name": "Customer Communication",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "ADD_GROUP_J8XtwFfmOb",
+      "name": "Classification & Priority",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "SELECT_0VgJLpLbb4PA3",
+      "name": "Category",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "SELECT_X8VrZjcDuPpZR",
+      "name": "Subcategory",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "CMDB_DATA_MHZlcvkxUu",
+      "name": "CI",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "SELECT_VycDrem4PHrPs",
+      "name": "Business Service",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "SELECT_edbq811O2CY3Y",
+      "name": "Service Tier",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "SELECT_q7Ae6RAW3idID",
+      "name": "Impact",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "SELECT_AoC4AxZ42fOjT",
+      "name": "Urgency",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "urgentLevel",
+      "name": "Priority",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "RADIO_jnGPYCfb7gasTt",
+      "name": "Major Incident",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "SELECT_9DvadP0IRlOFL",
+      "name": "Major Incident State",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "ADD_GROUP_UdkmVH0xBq",
+      "name": "Assignment",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "GROUP_Y4gQLPNrZWiFgC",
+      "name": "Assignment Group",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "MEMBER_61Sn2eIFcYnWU",
+      "name": "Assigned To",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "TEXTAREA_KtU373VANs2",
+      "name": "Escalation Reason",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "ADD_GROUP_9iFulpf674",
+      "name": "Major Incident Specific",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "DATE_ZO3txIjEAnoSmWz",
+      "name": "MIM Activated At",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "MEMBER_2QiJoJKawMhlr",
+      "name": "Major Incident Manager",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "INPUT_szSEwGLaOfg4fo",
+      "name": "Technical Bridge Number",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "INPUT_maMP7NvufehVIn",
+      "name": "Communication Bridge Number",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "SELECT_ZGB79XKBnOXJ2",
+      "name": "Regulatory Reportable",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "SELECT_oDweDC7FP5rwY",
+      "name": "Regulatory Notification Status",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "DATE_eRmOzXCtChC9tGs",
+      "name": "Regulatory Notified At",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "INPUT_GzYtGvyULncPdP",
+      "name": "Regulatory Reference",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "SELECT_jeCi4qgpXGqbF",
+      "name": "DR / Failover Invoked",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "SELECT_Lm9EutU3QFDtq",
+      "name": "RTO Met",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "RADIO_w8pOLmPMXcAApk",
+      "name": "Break-Glass Access Used",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "TEXTAREA_m4SMhTZPPHp",
+      "name": " Break-Glass Details",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "SELECT_EyIVtdXuZ3jTK",
+      "name": "Stakeholder Comms Cadence",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "DATE_FR1GGEKwA03J62O",
+      "name": "Last Stakeholder Update",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "DATE_6Us35KDigTauDV2",
+      "name": "MIM Stand Down At",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "DATE_UuLBNMBMqPncvH1",
+      "name": "Post-Incident Review Scheduled",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "ADD_GROUP_EujjQe3Vvl",
+      "name": "Tab",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "ADD_GROUP_tOwSH6BMUG",
+      "name": "On Hold Information",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "SELECT_ZmKk2xi3DjV5n",
+      "name": "Hold Reason",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "DATE_UdVBnFwkRJDhH0j",
+      "name": "Hold Start Time",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "RADIO_Qa3PF53ADnovKG",
+      "name": "SLA SLA Paused",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "TEXTAREA_s7WsxuygEiK",
+      "name": "Hold Notes",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "ADD_GROUP_5rXcin8TH7",
+      "name": "Resolution & Recovery",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "TEXTAREA_pqp2vU7O3iR",
+      "name": "Resolution Notes",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "SELECT_fjlAkWGwCu2Cr",
+      "name": "Resolution Code",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "DATE_zNDUjaTyRxJ7QzO",
+      "name": "Recovery Time",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "DATE_bIauFl0MNu0ssbw",
+      "name": "Actual Resolution Time",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "RADIO_NEeztdYFcOOw7K",
+      "name": "DR Triggered",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "TEXTAREA_Vm95EAt82GO",
+      "name": "DR Details",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "QUOTE_bO0XGJFVrwqsbA",
+      "name": "Reference",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "ADD_GROUP_ue87xKVskr",
+      "name": "Closure",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "SELECT_HHQ9ilmARXadd",
+      "name": "Close Code",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "TEXTAREA_msQ82E7Wkce",
+      "name": "Close Notes",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "RADIO_nccphxiNJ2wzVS",
+      "name": "User Confirmed Resolution",
+      "type": "CUSTOM"
+    },
+    {
+      "code": "RADIO_vJjiz9oNHhn9HY",
+      "name": "CSAT Survey Sent",
+      "type": "CUSTOM"
+    }
+  ],
+  "tabs": [
+    {
+      "id": "5a15825828894519ad8ca60eca831fa2",
+      "name": "Message board",
+      "alias": "Message board"
+    },
+    {
+      "id": "c9b8d98f50f547dd90cee6425e430444",
+      "name": "Business status flow",
+      "alias": "Business status flow"
+    },
+    {
+      "id": "30fe2c7cf683440a952ec63f671f1e60",
+      "name": "Associated ticket",
+      "alias": "Associated ticket"
+    },
+    {
+      "id": "c0df1107ca654c2fac7742ceebf20463",
+      "name": "SLA",
+      "alias": "SLA"
+    },
+    {
+      "id": "a571ae5bf686420e95f7066d6e39ff9f",
+      "name": "Associated articles",
+      "alias": "Associated articles"
+    },
+    {
+      "id": "11a11a88fd16456fb6f745c9e3f99f94",
+      "name": "Flow chart",
+      "alias": "Flow chart"
+    },
+    {
+      "id": "0885561073e148b39aa553ee2b414d01",
+      "name": "Tab",
+      "alias": "Tab"
+    },
+    {
+      "id": "d1fe9e2c351e430eafde6141cc0bdf1f",
+      "name": "History record",
+      "alias": "History record"
+    },
+    {
+      "id": "926a4fe0657446b4a3ec5a0d643207da",
+      "name": "Browsing record",
+      "alias": "Browsing record"
+    }
+  ],
+  "references": {
+    "nodeConfCount": 4,
+    "missingXmlNodeIds": [],
+    "missingTabIds": []
+  }
+}
