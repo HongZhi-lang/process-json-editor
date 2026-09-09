@@ -30,6 +30,26 @@ fi
 consistency_path="$DIR/CONSISTENCY.MD5"
 readme_path="$DIR/README.md"
 
+compute_md5() {
+    local file=$1
+    if command -v md5 >/dev/null 2>&1; then
+        md5 -q "$file"
+        return
+    fi
+    if command -v md5sum >/dev/null 2>&1; then
+        md5sum "$file" | awk '{print $1}'
+        return
+    fi
+    python3 - "$file" <<'PY'
+import hashlib
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+print(hashlib.md5(path.read_bytes()).hexdigest())
+PY
+}
+
 export LC_ALL=C
 
 printf 'env:%s\r\nversion:%s\r\n' "$ENV_ID" "$VERSION" > "$consistency_path"
@@ -64,7 +84,7 @@ ordered_files=("${sorted_files[@]}")
 
 for file in "${ordered_files[@]}"; do
     export_name=${file##*/}
-    hash=$(md5 -q "$file")
+    hash=$(compute_md5 "$file")
     printf '%s\r\n' "$export_name" >> "$readme_path"
     printf '%s:%s\r\n' "$export_name" "$hash" >> "$consistency_path"
 done
