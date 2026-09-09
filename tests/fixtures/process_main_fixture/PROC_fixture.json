@@ -1,0 +1,161 @@
+{
+  "processInfo": {
+    "id": "fixture-proc",
+    "processName": "Example Process",
+    "processXml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<bpmn:definitions xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" xmlns:di=\"http://www.omg.org/spec/DD/20100524/DI\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:cw=\"http://www.cloudwise.com/BPMN/20220520/MODEL\" id=\"Definitions_1\"><bpmn:process id=\"Process_1\" isExecutable=\"true\"><bpmn:startEvent id=\"StartEvent_1\" name=\"Start\"/><bpmn:userTask id=\"UserTask_Approval\" name=\"Approval\"/><bpmn:exclusiveGateway id=\"Gateway_1\" name=\"Decision\"/><bpmn:endEvent id=\"EndEvent_1\" name=\"End\"/><bpmn:sequenceFlow id=\"Flow_Start_Approval\" sourceRef=\"StartEvent_1\" targetRef=\"UserTask_Approval\"/><bpmn:sequenceFlow id=\"Flow_Approval_Gateway\" sourceRef=\"UserTask_Approval\" targetRef=\"Gateway_1\"/><bpmn:sequenceFlow id=\"Flow_Gateway_End\" name=\"Approved\" sourceRef=\"Gateway_1\" targetRef=\"EndEvent_1\"><bpmn:conditionExpression xsi:type=\"bpmn:tFormalExpression\">${approved}</bpmn:conditionExpression></bpmn:sequenceFlow></bpmn:process></bpmn:definitions>",
+    "mdlFormId": "form_1"
+  },
+  "firstNodeId": "UserTask_Approval",
+  "businessStatusFlow": {
+    "processDefId": "Process_1",
+    "canvasConfig": null,
+    "sequences": [],
+    "nodeBindings": []
+  },
+  "tabConfig": [
+    {
+      "id": "tab_basic",
+      "tabName": "Basic Info",
+      "tabAlias": "Basic Info"
+    },
+    {
+      "id": "tab_detail",
+      "tabName": "Details",
+      "tabAlias": "Details"
+    }
+  ],
+  "formDef": {
+    "id": "form_1",
+    "fieldList": [
+      {
+        "fieldCode": "ShortDescription",
+        "fieldName": "Short Description",
+        "fieldType": "INPUT",
+        "fieldValueType": "STRING",
+        "defaultValue": ""
+      }
+    ],
+    "formInfo": {
+      "type": "object",
+      "properties": {
+        "basicInfo": {
+          "type": "object",
+          "title": "Basic Info",
+          "x-props": {
+            "fieldCode": "basicInfo"
+          },
+          "properties": {
+            "ShortDescription": {
+              "type": "string",
+              "title": "Short Description",
+              "key": "ShortDescription",
+              "x-component": "INPUT",
+              "x-props": {
+                "fieldCode": "ShortDescription",
+                "defaultValue": "",
+                "placeholder": "Enter content"
+              },
+              "default": "",
+              "properties": {}
+            }
+          }
+        }
+      }
+    }
+  },
+  "nodeConf": [
+    {
+      "actNodeId": "StartEvent_1",
+      "actNodeName": "Start",
+      "actNodeType": "START_EVENT",
+      "nodeFormConf": {
+        "mdlFormId": "form_1",
+        "actFormInfo": {},
+        "actTabGroupInfo": [
+          {
+            "tabIds": [
+              "tab_basic"
+            ]
+          }
+        ]
+      },
+      "applyConf": []
+    },
+    {
+      "actNodeId": "UserTask_Approval",
+      "actNodeName": "Approval",
+      "actNodeType": "USER_TASK",
+      "handlerConf": {
+        "assignType": "CUSTOM_ASSIGN"
+      },
+      "nodeFormConf": {
+        "mdlFormId": "form_1",
+        "actFormInfo": {
+          "basicInfo": {
+            "requireGroup": [
+              "ShortDescription"
+            ]
+          }
+        },
+        "actTabGroupInfo": [
+          {
+            "tabIds": [
+              "tab_basic",
+              "tab_detail"
+            ]
+          }
+        ]
+      },
+      "applyConf": []
+    },
+    {
+      "actNodeId": "Gateway_1",
+      "actNodeName": "Decision",
+      "actNodeType": "EXCLUSIVE_GATEWAY",
+      "nodeFormConf": {
+        "mdlFormId": "form_1",
+        "actFormInfo": {},
+        "actTabGroupInfo": [
+          {
+            "tabIds": [
+              "tab_basic"
+            ]
+          }
+        ]
+      },
+      "applyConf": [
+        {
+          "actLineId": "Flow_Gateway_End",
+          "actLineName": "Approved",
+          "condition": [
+            {
+              "fieldKey": "ShortDescription",
+              "fieldType": "INPUT",
+              "type": "EQ",
+              "valueList": [
+                "ok"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "actNodeId": "EndEvent_1",
+      "actNodeName": "End",
+      "actNodeType": "END_TASK",
+      "nodeFormConf": {
+        "mdlFormId": "form_1",
+        "actFormInfo": {},
+        "actTabGroupInfo": [
+          {
+            "tabIds": [
+              "tab_basic"
+            ]
+          }
+        ]
+      },
+      "applyConf": []
+    }
+  ]
+}

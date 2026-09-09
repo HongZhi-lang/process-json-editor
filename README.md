@@ -9,6 +9,29 @@
 
 ## 常见使用问题
 
+## PROC 自然语言编辑 MVP
+
+仓库现在提供了一个仅面向 `PROC_*.json` 的局部编辑脚本，可配合 skill 在不展开整份超大 JSON 的情况下完成自然语言修改：
+
+```bash
+python3 .github/skills/process-json-editor/scripts/proc-json-nl-editor.py --help
+```
+
+推荐流程：
+
+1. `summarize`：先看流程摘要
+2. `find`：把自然语言请求映射到候选 JSON Pointer
+3. `slice`：只读取目标片段和一跳关联引用
+4. `edit`：直接处理 MVP 支持的自然语言请求
+5. `apply`：对复杂局部结构使用结构化 patch
+6. `validate-process-json.sh`：校验
+7. `md5.sh` / `md5.ps1`：更新 `README.md` 与 `CONSISTENCY.MD5`
+
+详细说明见：
+
+- `.github/skills/process-json-editor/SKILL.md`
+- `.github/skills/process-json-editor/references/PROC/自然语言编辑MVP说明.md`
+
 ### Windows
 
 ADV_文件的命名规则是：`^ADV_(?<processDefKey>\w+)_(?<version>\d+)_(?<uuid>[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})\.json$`

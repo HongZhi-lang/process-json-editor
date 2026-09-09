@@ -48,6 +48,83 @@ Do not change IDs just to make a value look consistent. ID changes can affect se
 5. Only after all JSON changes are final, regenerate `README.md` and `CONSISTENCY.MD5` with the existing MD5 script.
 6. Do not edit or re-save JSON files after MD5 generation. Encoding, BOM, and line endings are part of the checked content.
 
+## Natural-language editing MVP (PROC only)
+
+This skill now includes a PROC-only helper script:
+
+```bash
+python3 .github/skills/process-json-editor/scripts/proc-json-nl-editor.py --help
+```
+
+Recommended flow for large PROC files:
+
+1. **Summarize without loading the whole file into the model**
+
+   ```bash
+   python3 .github/skills/process-json-editor/scripts/proc-json-nl-editor.py \
+     summarize --target standardProcess/Problem\ Management/process_main_Problem\ Management
+   ```
+
+2. **Find candidate JSON pointers from the user's natural-language request**
+
+   ```bash
+   python3 .github/skills/process-json-editor/scripts/proc-json-nl-editor.py \
+     find --target standardProcess/Problem\ Management/process_main_Problem\ Management \
+     --query '把 Approval 节点改成 Review'
+   ```
+
+3. **Inspect only the local slice that needs editing**
+
+   ```bash
+   python3 .github/skills/process-json-editor/scripts/proc-json-nl-editor.py \
+     slice --target standardProcess/Problem\ Management/process_main_Problem\ Management \
+     --pointer /nodeConf/1
+   ```
+
+4. **For supported simple requests, edit directly from natural language**
+
+   ```bash
+   python3 .github/skills/process-json-editor/scripts/proc-json-nl-editor.py \
+     edit --target standardProcess/Problem\ Management/process_main_Problem\ Management \
+     --request '将节点 "Approval" 的名称改为 "Review"'
+   ```
+
+5. **For more complex local edits, let the model produce structured operations and apply them**
+
+   ```json
+   [
+     {
+       "op": "merge",
+       "path": "/nodeConf/1/handlerConf",
+       "value": {
+         "assignType": "CUSTOM_ASSIGN"
+       }
+     }
+   ]
+   ```
+
+   ```bash
+   python3 .github/skills/process-json-editor/scripts/proc-json-nl-editor.py \
+     apply --target standardProcess/Problem\ Management/process_main_Problem\ Management \
+     --ops-file /tmp/proc-ops.json
+   ```
+
+The helper script only edits the target slice and then runs built-in consistency checks before writing the file. It blocks direct edits to known reference keys such as `actNodeId`, `fieldCode`, `tabConfig[].id`, `processXml`, and `firstNodeId`; use dedicated sync-aware operations or stop and ask for clarification instead of blind edits.
+
+Supported direct natural-language intents in this MVP:
+
+- Rename `processInfo.processName`
+- Rename a node by `actNodeName` or `actNodeId`, with `nodeConf` + `processXml` sync
+- Update a field's display name or default value, with `fieldList` + `formInfo` sync
+- Rename a tab's `tabName` / `tabAlias`
+
+Known limitations:
+
+- Only `PROC_*.json` is supported.
+- BPMN topology changes such as adding/removing nodes or rewiring flows are not automated yet.
+- If `find` or a selector matches multiple candidates, stop and ask the user to confirm the exact target.
+- For unsupported edits, use `find` + `slice` + `apply` so the model only sees the minimum local context.
+
 ## Validation requirements
 
 The change is complete only when:
@@ -70,6 +147,7 @@ The change is complete only when:
 - [Nodes and process XML](./references/PROC/node节点与processXml说明.md)
 - [Complete change chain](./references/PROC/修改流程的完整链路.md)
 - [Tabs](./references/PROC/tab页说明.md)
+- [Natural-language MVP](./references/PROC/自然语言编辑MVP说明.md)
 - [MD5 usage](./references/MD5/MD5脚本使用说明.md)
 
 ## Important constraints
