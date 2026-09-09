@@ -20,3 +20,17 @@ ADV_文件的命名规则是：`^ADV_(?<processDefKey>\w+)_(?<version>\d+)_(?<uu
 MacOS 在处理压缩包时，**系统会添加一些附加信息文件**，导致最终生成的tar包不符合规则。
 
 目前确认使用`keka`，勾选 **`排除Mac资源文件 / Exclude Mac resource forks`** ，生成的tar包覆合规则
+
+## 大型 PROC JSON 局部修改 MVP
+
+已提供 `PROC_*.json` 的本地局部编辑脚本（MVP）：
+
+`/home/runner/work/process-json-editor/process-json-editor/.github/skills/process-json-editor/scripts/proc_json_local_edit.py`
+
+能力范围：
+
+- 仅支持 `PROC_*.json`
+- 递归建立 JSON Pointer 节点索引（路径、摘要、hash）
+- 提取常见引用并构建一跳依赖/反向引用上下文
+- 支持 JSON Patch（`add` / `replace` / `remove`）本地合并
+- 合并后执行基础一致性校验（JSON/XML、常见引用、唯一性）

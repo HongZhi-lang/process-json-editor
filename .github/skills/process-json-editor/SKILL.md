@@ -48,6 +48,41 @@ Do not change IDs just to make a value look consistent. ID changes can affect se
 5. Only after all JSON changes are final, regenerate `README.md` and `CONSISTENCY.MD5` with the existing MD5 script.
 6. Do not edit or re-save JSON files after MD5 generation. Encoding, BOM, and line endings are part of the checked content.
 
+## Large PROC JSON local edit MVP
+
+For very large `PROC_*.json` files, use the local MVP script to avoid sending the full file to model context:
+
+```bash
+python3 .github/skills/process-json-editor/scripts/proc_json_local_edit.py index \
+  --input /absolute/path/process_main_xxx/PROC_xxx.json \
+  --output /tmp/proc_index.json
+
+python3 .github/skills/process-json-editor/scripts/proc_json_local_edit.py context \
+  --input /absolute/path/process_main_xxx/PROC_xxx.json \
+  --target /nodeConf/0 \
+  --output /tmp/proc_context.json
+
+python3 .github/skills/process-json-editor/scripts/proc_json_local_edit.py apply-patch \
+  --input /absolute/path/process_main_xxx/PROC_xxx.json \
+  --patch /tmp/proc_patch.json \
+  --output /tmp/PROC_xxx.updated.json
+```
+
+MVP behavior:
+
+- Scope is **PROC-only** (`PROC_*.json`).
+- Recursively indexes JSON Pointer nodes (object / array element subtree level).
+- Generates per-node metadata: path, short summary, and content hash.
+- Extracts common references (`id`, `ref`, `key`, `name`, `target`, `source`, `component`, `action`) plus PROC-related keys (`actNodeId`, `actLineId`, `sourceRef`, `targetRef`, `firstNodeId`, `mdlFormId`, `fieldCode`, `tabIds`, `defaultSequence`).
+- Builds minimal one-hop edit context: target node + one-hop dependencies + one-hop reverse reference summaries.
+- Applies local JSON patch operations (`add` / `replace` / `remove`) and validates before output.
+
+Known limitations:
+
+- Only RFC6902 subset (`add`, `replace`, `remove`) is supported.
+- This MVP does not auto-generate patches from natural language requests.
+- Reference extraction is heuristic and optimized for current PROC structure.
+
 ## Validation requirements
 
 The change is complete only when:
