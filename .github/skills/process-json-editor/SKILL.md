@@ -1,6 +1,6 @@
 ---
 name: process-json-editor
-description: "Use when modifying or reviewing BPMN process export JSON, especially PROC_*.json. Covers process names, nodes, handlers, form fields, gateway conditions, tabs, cross-reference validation, README.md, and CONSISTENCY.MD5 regeneration."
+description: "Use when modifying or reviewing BPMN process export JSON, especially PROC_*.json. Covers local indexing and patching, process names, nodes, handlers, form fields, gateway conditions, tabs, cross-reference validation, README.md, and CONSISTENCY.MD5 regeneration."
 argument-hint: "Describe the process file, target object, current value, and desired value"
 user-invocable: true
 ---
@@ -8,6 +8,30 @@ user-invocable: true
 # Process JSON Editor
 
 Use this skill for repeatable changes to a process export package. The main target is `PROC_*.json` in a `process_main_*` directory.
+
+## Bundled tools
+
+For large `PROC_*.json` files, use the bundled tools in `.github/skills/process-json-editor/tools/proc-indexer` instead of loading or reserializing the complete file in the model context:
+
+```powershell
+node .\.github\skills\process-json-editor\tools\proc-indexer\src\cli.mjs <path-to-PROC.json> --out .\tmp\process-index.json
+node .\.github\skills\process-json-editor\tools\proc-indexer\src\cli.mjs <path-to-PROC.json> --node <actNodeId-or-name>
+node .\.github\skills\process-json-editor\tools\proc-indexer\src\patch.mjs <path-to-PROC.json> <patch-plan.json> --out .\tmp\process-result.json
+```
+
+The indexer reports stable node IDs, embedded XML names and flow relationships, BPMN-DI shape/edge completeness, form fields, Tab IDs, file hashes, and unresolved XML/Tab references. Resolve a name to a stable ID before creating a patch plan. The patcher supports:
+
+- replacing existing process, node, or Tab scalar values with `expectedOldValue` protection;
+- renaming a node while synchronizing `nodeConf[].actNodeName` and its embedded XML `name`;
+- appending an item to an existing JSON array;
+- inserting a node on an explicitly selected `sequenceFlow`, replacing the old flow with two new flows;
+- removing a node, deleting its incident flows, and reconnecting its upstream nodes to the selected downstream node;
+- synchronizing `bpmndi:BPMNShape` and `bpmndi:BPMNEdge` so page rendering matches the XML topology;
+- temporary-output validation and SHA-256/MD5 reporting.
+
+Use `--in-place` only after reviewing a separate `--out` result. The patcher supports selected linear topology insertion/removal, but does not construct complete BPMN topology, form permissions, gateway mappings, or Tab relationships automatically.
+
+On macOS/Linux, use the same commands with `/` paths. The package requires Node.js 22 or later. Run `npm install` in `.github/skills/process-json-editor/tools/proc-indexer` before first use if dependencies are not already installed.
 
 ## Before editing
 
@@ -20,15 +44,20 @@ Do not change IDs just to make a value look consistent. ID changes can affect se
 
 ## Change workflow
 
-1. Parse the target JSON instead of performing broad text replacement.
-2. Apply the smallest requested change.
-3. Update every mirrored or referenced value:
+1. Generate a local semantic index with `.github/skills/process-json-editor/tools/proc-indexer/src/cli.mjs` and identify the exact target ID or field code.
+2. Read the relevant JSON sections before changing anything.
+3. Create a schema-versioned patch plan with the source `fileSha256` and `expectedOldValue` whenever the change is supported by `patch.mjs`.
+4. Apply the plan to a temporary copy or separate `--out` path with `.github/skills/process-json-editor/tools/proc-indexer/src/patch.mjs`.
+5. For topology requests, resolve the exact flow ID and show the current upstream/downstream topology before writing. If a node has multiple candidate incoming/outgoing flows, stop and ask the user to select one; do not guess.
+6. Apply the smallest requested change and update every mirrored or referenced value:
    - Node names: `processInfo.processXml` and `nodeConf[].actNodeName`.
    - Node IDs: XML node references, `nodeConf[].actNodeId`, incoming/outgoing references, and `firstNodeId` when applicable.
    - Form fields: `formDef.formInfo`, `formDef.fieldList`, and node-level field permissions.
    - Gateway conditions: XML `sequenceFlow.conditionExpression` and `nodeConf[].applyConf`.
    - Tabs: `tabConfig[]` and node-level `actTabGroupInfo[].tabIds`.
-4. Run the validation script:
+  - Inserted nodes: replace the selected old flow, create both new flows, update XML incoming/outgoing references, and update the upstream `applyConf`.
+  - Removed nodes: delete the node-level `nodeConf`, XML node, and incident flows; create replacement flows according to the selected branch rule. Do not modify `formDef` or `tabConfig` metadata.
+7. Run the repository validation script:
 
     Windows:
 
@@ -45,8 +74,17 @@ Do not change IDs just to make a value look consistent. ID changes can affect se
       -p test/process_main_test/PROC_c738b53a375d46d9b258c020d2a4720b.json
     ```
 
-5. Only after all JSON changes are final, regenerate `README.md` and `CONSISTENCY.MD5` with the existing MD5 script.
-6. Do not edit or re-save JSON files after MD5 generation. Encoding, BOM, and line endings are part of the checked content.
+8. Only after all JSON changes are final, regenerate `README.md` and `CONSISTENCY.MD5` with the existing MD5 script.
+9. Do not edit or re-save JSON files after MD5 generation. Encoding, BOM, and line endings are part of the checked content.
+
+### Topology decision rules
+
+- A new node uses the user-provided `name`, `type`, and configuration. If type is omitted, use `USER_TASK`; copy the form configuration from the previous node; select the nearest same-type node's `handlerConf` as the template and clear its assignment. An explicitly supplied `handlerConf` overrides this default.
+- Adding a node always removes the selected old connection before creating the two replacement connections. Use an explicit `flowId`, or use `afterNodeId`/`beforeNodeId` only when the selected node has exactly one outgoing/incoming flow. A vague request such as “after In Progress” is insufficient when that node has multiple candidate flows; return the indexed candidates and wait for clarification.
+- Removing a node with one incoming and one outgoing flow reconnects them automatically. Multiple incoming flows may connect to the selected downstream node.
+- Removing a node with multiple outgoing flows requires `keepOutgoingFlowId`. Discarded branches are removed according to the topology; do not infer the retained branch.
+- If a removal collapses a multi-output gateway branch, require explicit user confirmation after returning the gateway's incoming/outgoing topology. Do not modify the process while that confirmation is missing.
+- `startEvent` and `endEvent` are the single fixed process boundary nodes discovered from `processXml`; they are not ordinary user-selected `nodeConf` templates.
 
 ## Validation requirements
 
@@ -60,6 +98,8 @@ The change is complete only when:
 - `nodeFormConf.mdlFormId` matches `formDef.id` when both are present.
 - Field permission references point to fields in `formDef.fieldList`.
 - Tab references point to entries in `tabConfig[].id`.
+- Every process XML node has a matching `bpmndi:BPMNShape`.
+- Every process XML `sequenceFlow` has a matching `bpmndi:BPMNEdge`.
 - MD5 metadata is regenerated after the last JSON change.
 
 ## Reference documents

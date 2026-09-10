@@ -2,7 +2,7 @@
   "name": "proc-indexer",
   "private": true,
   "version": "0.1.0",
-  "description": "Read-only semantic indexer for large PROC process JSON files",
+  "description": "Semantic indexer and constrained topology patcher for large PROC process JSON files",
   "type": "module",
   "bin": {
     "proc-index": "./src/cli.mjs"

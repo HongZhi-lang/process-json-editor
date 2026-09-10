@@ -40,6 +40,8 @@ for file in "$DIR"/*; do
     [[ -f "$file" ]] || continue
     name=${file##*/}
     [[ "$name" == 'CONSISTENCY.MD5' || "$name" == 'README.md' ]] && continue
+    lower_name=$(printf '%s' "$name" | tr '[:upper:]' '[:lower:]')
+    [[ "$lower_name" == *.jar ]] && continue
     ordered_files+=("$file")
 done
 

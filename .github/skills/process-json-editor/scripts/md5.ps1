@@ -30,7 +30,7 @@ $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 [System.IO.File]::WriteAllText($readmePath, '', $utf8NoBom)
 
 $orderedFiles = Get-ChildItem -Path $Dir -File | Where-Object {
-    $_.Name -notin @('CONSISTENCY.MD5', 'README.md')
+    $_.Name -notin @('CONSISTENCY.MD5', 'README.md') -and $_.Extension -ine '.jar'
 } | Sort-Object @{ Expression = {
     if ($_.Name -like 'PROC_*.json') { 0 }
     elseif ($_.Name -like 'ADV_*.json') { 1 }

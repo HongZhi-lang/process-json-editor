@@ -60,6 +60,19 @@ function parseXmlIndex(xml) {
   return { elements, byId, flows, incoming, outgoing };
 }
 
+function parseDiagramIndex(xml) {
+  const shapes = new Set();
+  const edges = new Set();
+  const re = /<bpmndi:(BPMNShape|BPMNEdge)\b([^>]*?)(?:\/>|>)/g;
+  for (const match of xml.matchAll(re)) {
+    const attrs = parseAttributes(match[2]);
+    if (!attrs.bpmnElement) continue;
+    if (match[1] === 'BPMNShape') shapes.add(attrs.bpmnElement);
+    else edges.add(attrs.bpmnElement);
+  }
+  return { shapes, edges };
+}
+
 function asArray(value) {
   return value == null ? [] : Array.isArray(value) ? value : [value];
 }
@@ -100,12 +113,14 @@ function createIndex(filePath) {
   const xmlText = data.processInfo?.processXml;
   if (typeof xmlText !== 'string') throw new Error('processInfo.processXml is missing or is not a string');
   const xml = parseXmlIndex(xmlText);
+  const diagram = parseDiagramIndex(xmlText);
   const nodes = asArray(data.nodeConf).map((node) => nodeCard(node, xml));
   const nodeConfIds = new Set(nodes.map((node) => node.id).filter(Boolean));
   const missingNodeConfIds = nodes.filter((node) => !node.xml).map((node) => node.id);
   const referencedTabs = [...new Set(nodes.flatMap((node) => node.tabIds))];
   const tabs = asArray(data.tabConfig).map((tab) => ({ id: tab.id ?? null, name: tab.tabName ?? null, alias: tab.tabAlias ?? null }));
   const tabIds = new Set(tabs.map((tab) => tab.id).filter(Boolean));
+  const diagramNodeIds = xml.elements.filter((element) => !['sequenceFlow', 'definitions', 'process'].includes(element.type)).map((element) => element.id);
   return {
     schemaVersion: 1,
     file: {
@@ -126,12 +141,15 @@ function createIndex(filePath) {
       sequenceFlowCount: xml.flows.size,
     },
     nodes,
+    flows: [...xml.flows.values()],
     fields: collectFieldCodes(data),
     tabs,
     references: {
       nodeConfCount: nodeConfIds.size,
       missingXmlNodeIds: missingNodeConfIds,
       missingTabIds: referencedTabs.filter((id) => !tabIds.has(id)),
+      missingDiagramNodeIds: diagramNodeIds.filter((id) => !diagram.shapes.has(id)),
+      missingDiagramFlowIds: [...xml.flows.keys()].filter((id) => !diagram.edges.has(id)),
     },
   };
 }

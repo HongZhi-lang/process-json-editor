@@ -7,7 +7,7 @@
 - `CONSISTENCY.MD5`：记录环境、版本和每个流程定义文件的 MD5。
 - `README.md`：记录导出协议中的文件名清单。
 
-脚本会覆盖目标目录中已有的 `CONSISTENCY.MD5` 和 `README.md`。不会修改任何 JSON 文件，也不会创建 tar 包。
+脚本会覆盖目标目录中已有的 `CONSISTENCY.MD5` 和 `README.md`。目录中的 `.jar` 文件（扩展名不区分大小写）不会写入这两个文件。脚本不会修改任何 JSON 文件，也不会创建 tar 包。
 
 ## 前提条件
 
@@ -117,7 +117,7 @@ chmod +x md5.sh
 2. `ADV_*.json`
 3. 其他文件
 
-同一类文件再按文件名排序。`CONSISTENCY.MD5` 与 `README.md` 自身不会参与 MD5 计算。
+同一类文件再按文件名排序。`.jar` 文件、`CONSISTENCY.MD5` 与 `README.md` 自身不会参与 MD5 计算，也不会写入 `README.md`。
 
 ### ADV 文件名映射
 

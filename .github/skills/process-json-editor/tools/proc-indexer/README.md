@@ -1,4 +1,4 @@
-# PROC Indexer and Minimal Patcher
+# PROC Indexer and Topology Patcher
 
 This directory contains tools for reading and minimally modifying large `PROC_*.json` files without sending the complete file to an AI model or reserializing the entire JSON document.
 
@@ -10,7 +10,7 @@ This directory contains tools for reading and minimally modifying large `PROC_*.
 ## 1. Generate a semantic index
 
 ```powershell
-node .\tools\proc-indexer\src\cli.mjs <path-to-PROC.json> --out .\tmp\process-index.json
+node .\.github\skills\process-json-editor\tools\proc-indexer\src\cli.mjs <path-to-PROC.json> --out .\tmp\process-index.json
 ```
 
 The source file is never rewritten. The index includes:
@@ -20,12 +20,12 @@ The source file is never rewritten. The index includes:
 - node cards with stable IDs, names, types, incoming/outgoing flows;
 - gateway line IDs, form groups, and referenced Tab IDs;
 - form-field and Tab summaries;
-- unresolved XML-node and Tab-reference diagnostics.
+- unresolved XML-node, Tab-reference, BPMN-DI shape, and BPMN-DI edge diagnostics.
 
 Query a specific node with its stable ID:
 
 ```powershell
-node .\tools\proc-indexer\src\cli.mjs <path-to-PROC.json> --node <actNodeId>
+node .\.github\skills\process-json-editor\tools\proc-indexer\src\cli.mjs <path-to-PROC.json> --node <actNodeId>
 ```
 
 Name lookup is supported, but names may be duplicated. Resolve and use the ID before creating a patch.
@@ -121,13 +121,47 @@ The initial add capability appends one object to an existing array, such as `tab
 
 Appending a node or Tab does not automatically create all required BPMN, form, permission, or reference relationships. Such complex process changes remain out of scope for this minimum implementation.
 
+### Insert a node on a selected flow
+
+Use a flow ID, use `fromId` and `toId` when exactly one flow connects the two nodes, or use `afterNodeId`/`beforeNodeId` when that node has exactly one outgoing/incoming flow. The node configuration is cloned from `templateNodeId` (normally the upstream node), its form configuration is retained, and its handler assignment is cleared unless `handlerConf` is explicitly supplied. If there are multiple candidate flows, the patcher stops and returns the candidates.
+
+```json
+{
+  "op": "insertNode",
+  "afterNodeId": "<upstream-node-id>",
+  "templateNodeId": "<nearest-same-type-node-id>",
+  "node": {
+    "id": "UserTask_review",
+    "name": "review",
+    "type": "USER_TASK"
+  },
+  "beforeFlowId": "SequenceFlow_review_in",
+  "afterFlowId": "SequenceFlow_review_out"
+}
+```
+
+The old flow is removed. The patcher creates `source -> new node` and `new node -> old target`, updates XML incoming/outgoing references, and updates the upstream `applyConf`.
+
+### Remove a node and reconnect topology
+
+```json
+{
+  "op": "removeNode",
+  "target": { "id": "<node-id>" }
+}
+```
+
+For one incoming and one outgoing flow, the patcher creates a replacement flow automatically. Multiple incoming flows are connected to the selected downstream target. A node with multiple outgoing flows requires `keepOutgoingFlowId`; discarded branches are pruned until a shared merge point. If the removed node is on a multi-output gateway branch, `confirmGatewayCollapse: true` is required after the topology has been shown to and confirmed by the user.
+
+`formDef` and `tabConfig` are metadata and are not removed by `removeNode`. Only the node-level `nodeConf` and its XML topology are changed.
+
 ## 3. Apply a plan safely
 
 Always test with a copy first:
 
 ```powershell
 Copy-Item <path-to-PROC.json> .\tmp\process-fixture.json
-node .\tools\proc-indexer\src\patch.mjs `
+node .\.github\skills\process-json-editor\tools\proc-indexer\src\patch.mjs `
   .\tmp\process-fixture.json `
   .\tmp\patch-plan.json `
   --out .\tmp\process-result.json
@@ -141,15 +175,16 @@ The patcher:
 4. edits only the affected JSON token using `jsonc-parser`;
 5. synchronizes node names into embedded XML;
 6. appends new array items without reserializing unrelated content;
-7. writes a temporary output and re-indexes it before rename;
-8. reports the resulting SHA-256 and MD5.
+7. inserts or removes topology only when the selected flow/branch is unambiguous;
+8. writes a temporary output and re-indexes it before rename;
+9. reports the resulting SHA-256 and MD5.
 
 The original source remains unchanged when `--out` is used.
 
 For a deliberate final replacement, use a separate validated output first. The current implementation also supports:
 
 ```powershell
-node .\tools\proc-indexer\src\patch.mjs `
+node .\.github\skills\process-json-editor\tools\proc-indexer\src\patch.mjs `
   <path-to-PROC.json> `
   .\tmp\patch-plan.json `
   --in-place
@@ -159,7 +194,7 @@ In-place mode uses a temporary file and a short-lived backup during replacement.
 
 ## 4. Validation and MD5
 
-The patcher checks that the resulting index has no missing XML-node or Tab references. Before importing the result, run the repository’s full process validator. Only after the final JSON passes validation should `README.md` and `CONSISTENCY.MD5` be regenerated with the existing scripts. Do not save the JSON again after MD5 generation.
+The patcher checks that the resulting index has no missing XML-node, Tab, BPMN-DI shape, or BPMN-DI edge references. Before importing the result, run the repository’s full process validator. Only after the final JSON passes validation should `README.md` and `CONSISTENCY.MD5` be regenerated with the existing scripts. Do not save the JSON again after MD5 generation.
 
 ## Current scope and stop point
 
@@ -169,13 +204,15 @@ Implemented minimum capability:
 - modify existing scalar values by stable target ID and expected old value;
 - rename an existing node while synchronizing JSON and embedded XML;
 - append an object to an existing JSON array;
+- insert a configured node on a selected flow while replacing the old flow;
+- remove a node while deleting its old flows and creating valid replacement flows;
+- synchronize BPMN-DI shapes and edges so page rendering matches the XML topology;
 - preserve the original file when writing to a separate output;
 - validate temporary output before replacement and report hashes.
 
 Not implemented:
 
-- adding a complete BPMN node and its flows;
-- deleting or reordering nodes;
+- ambiguous gateway branch deletion without an explicit user confirmation;
 - gateway-condition changes;
 - automatic form-field or permission construction;
 - automatic Tab/reference construction;
