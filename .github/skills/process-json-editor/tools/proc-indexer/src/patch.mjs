@@ -7,9 +7,11 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const indexerPath = path.join(path.dirname(fileURLToPath(import.meta.url)), 'cli.mjs');
 const { createIndex } = await import(pathToFileURL(indexerPath).href);
+const validatorPath = path.join(path.dirname(fileURLToPath(import.meta.url)), 'validate.mjs');
+const { validate } = await import(pathToFileURL(validatorPath).href);
 
 function usage() {
-  console.error('Usage: node src/patch.mjs <PROC_*.json> <patch-plan.json> [--out <file>] [--in-place]');
+  console.error('Usage: node src/patch.mjs <PROC_*.json> <patch-plan.json> [--out <file>] [--in-place] [--cleanup <file> ...]');
   process.exitCode = 2;
 }
 
@@ -161,10 +163,19 @@ function addXmlReference(xml, nodeId, direction, flowId) {
 }
 
 function createXmlNode(id, name, xmlType, incoming, outgoing) {
-  const prefix = 'bpmn';
+  const [prefix, localType] = xmlType.includes(':') ? xmlType.split(':', 2) : ['bpmn', xmlType];
   const attributes = [`id="${escapeXmlAttribute(id)}"`, `name="${escapeXmlAttribute(name)}"`];
-  const refs = [...incoming.map((flowId) => `      <${prefix}:incoming>${flowId}</${prefix}:incoming>`), ...outgoing.map((flowId) => `      <${prefix}:outgoing>${flowId}</${prefix}:outgoing>`)];
-  return refs.length ? `    <${prefix}:${xmlType} ${attributes.join(' ')}>\n${refs.join('\n')}\n    </${prefix}:${xmlType}>\n` : `    <${prefix}:${xmlType} ${attributes.join(' ')} />\n`;
+  const bpmnPrefix = 'bpmn';
+  const refs = [...incoming.map((flowId) => `      <${bpmnPrefix}:incoming>${flowId}</${bpmnPrefix}:incoming>`), ...outgoing.map((flowId) => `      <${bpmnPrefix}:outgoing>${flowId}</${bpmnPrefix}:outgoing>`)];
+  return refs.length ? `    <${prefix}:${localType} ${attributes.join(' ')}>\n${refs.join('\n')}\n    </${prefix}:${localType}>\n` : `    <${prefix}:${localType} ${attributes.join(' ')} />\n`;
+}
+
+function ensureXmlNamespace(xml, prefix, namespace) {
+  const rootMatch = /<([\w]+):definitions\b([^>]*)>/.exec(xml);
+  if (!rootMatch) throw new Error('BPMN definitions root not found');
+  if (new RegExp(`\\bxmlns:${prefix}=`).test(rootMatch[2])) return xml;
+  const replacement = `<${rootMatch[1]}:definitions${rootMatch[2]} xmlns:${prefix}="${namespace}">`;
+  return xml.replace(rootMatch[0], replacement);
 }
 
 function createXmlFlow(id, sourceRef, targetRef, attributes = {}) {
@@ -274,8 +285,50 @@ function emptyHandler(handler) {
 }
 
 function nodeXmlType(node) {
-  if (node.xmlType) return node.xmlType;
-  return { USER_TASK: 'userTask', END_TASK: 'endEvent', START_TASK: 'startEvent', EXCLUSIVE_GATEWAY: 'exclusiveGateway', PARALLEL_GATEWAY: 'parallelGateway', INCLUSIVE_GATEWAY: 'inclusiveGateway' }[node.type] ?? 'userTask';
+  if (node.xmlType) return node.xmlType.includes(':') ? node.xmlType : `${node.type === 'SINGLE_APPROVE_TASK' || node.type === 'MULTI_APPROVE_TASK' ? 'cw' : 'bpmn'}:${node.xmlType}`;
+  return {
+    USER_TASK: 'bpmn:userTask',
+    END_TASK: 'bpmn:endEvent',
+    START_TASK: 'bpmn:startEvent',
+    EXCLUSIVE_GATEWAY: 'bpmn:exclusiveGateway',
+    PARALLEL_GATEWAY: 'bpmn:parallelGateway',
+    INCLUSIVE_GATEWAY: 'bpmn:inclusiveGateway',
+    SINGLE_APPROVE_TASK: 'cw:singleApprove',
+    MULTI_APPROVE_TASK: 'cw:multiApprove',
+  }[node.type] ?? 'bpmn:userTask';
+}
+
+function isGatewayType(type) {
+  return ['EXCLUSIVE_GATEWAY', 'PARALLEL_GATEWAY', 'INCLUSIVE_GATEWAY'].includes(type);
+}
+
+function newFormConfigId(usedIds) {
+  let id;
+  do id = crypto.randomBytes(16).toString('hex'); while (usedIds.has(id));
+  usedIds.add(id);
+  return id;
+}
+
+function nearestSameTypeNode(root, topology, sourceId, type) {
+  const candidates = new Map((root.nodeConf ?? []).filter((node) => node?.actNodeType === type).map((node) => [node.actNodeId, node]));
+  if (!candidates.size) return null;
+  const queue = [[sourceId, 0]];
+  const visited = new Set([sourceId]);
+  while (queue.length) {
+    const [nodeId, distance] = queue.shift();
+    if (distance > 0 && candidates.has(nodeId)) return candidates.get(nodeId);
+    const neighbors = [
+      ...(topology.incoming.get(nodeId) ?? []).map((flow) => flow.sourceRef),
+      ...(topology.outgoing.get(nodeId) ?? []).map((flow) => flow.targetRef),
+    ];
+    for (const neighbor of neighbors) {
+      if (!visited.has(neighbor)) {
+        visited.add(neighbor);
+        queue.push([neighbor, distance + 1]);
+      }
+    }
+  }
+  return candidates.values().next().value ?? null;
 }
 
 function updateApplyConf(root, nodeId, removedFlowIds, addedFlowIds) {
@@ -326,10 +379,10 @@ function insertNode(root, text, operation) {
   const topology = parseXmlTopology(xml);
   const edge = resolveFlow(topology, operation);
   const sourceNode = root.nodeConf?.find((node) => node?.actNodeId === edge.sourceRef);
-  const template = operation.templateNodeId ? root.nodeConf?.find((node) => node?.actNodeId === operation.templateNodeId) : sourceNode;
   const nodeSpec = operation.node ?? {};
   const usedIds = new Set(topology.elements.map((item) => item.id));
-  const nodeId = nodeSpec.id ?? uniqueId(nodeXmlType(nodeSpec) === 'userTask' ? 'UserTask' : nodeXmlType(nodeSpec), usedIds);
+  const xmlType = nodeXmlType(nodeSpec);
+  const nodeId = nodeSpec.id ?? uniqueId(xmlType.split(':').at(-1) === 'userTask' ? 'UserTask' : xmlType.split(':').at(-1), usedIds);
   if (usedIds.has(nodeId)) throw new Error(`New node ID already exists: ${nodeId}`);
   const nodeName = nodeSpec.name;
   if (!nodeName) throw new Error('insertNode requires node.name');
@@ -338,28 +391,42 @@ function insertNode(root, text, operation) {
   const secondFlowId = operation.afterFlowId ?? uniqueId('SequenceFlow', usedIds);
   if (firstFlowId === secondFlowId || usedIds.has(secondFlowId)) throw new Error(`New sequence flow ID already exists: ${secondFlowId}`);
   const type = nodeSpec.type ?? 'USER_TASK';
+  const template = operation.templateNodeId
+    ? root.nodeConf?.find((node) => node?.actNodeId === operation.templateNodeId)
+    : nearestSameTypeNode(root, topology, edge.sourceRef, type) ?? sourceNode;
+  if (['SINGLE_APPROVE_TASK', 'MULTI_APPROVE_TASK'].includes(type) && !operation.templateNodeId && !nearestSameTypeNode(root, topology, edge.sourceRef, type) && !nodeSpec.config && !nodeSpec.handlerConf) {
+    throw new Error(`No same-type approval template found for ${type}; provide templateNodeId or explicit node.config`);
+  }
   const nodeConf = clone(nodeSpec.config ?? template);
   if (!nodeConf) throw new Error('insertNode requires node.config or a template node');
   nodeConf.actNodeId = nodeId;
   nodeConf.actNodeName = nodeName;
   nodeConf.actNodeType = type;
+  nodeConf.isFirst = 0;
   nodeConf.handlerConf = clone(nodeSpec.handlerConf ?? (template?.handlerConf ?? {}));
+  nodeConf.handlerConf.actNodeId = null;
+  nodeConf.handlerConf.actNodeName = null;
   if (nodeSpec.handlerConf == null) nodeConf.handlerConf = emptyHandler(nodeConf.handlerConf);
-  if (nodeSpec.formConfig != null) nodeConf.nodeFormConf = clone(nodeSpec.formConfig);
-  nodeConf.applyConf = [];
-  const newXmlNode = createXmlNode(nodeId, nodeName, nodeXmlType({ type, xmlType: nodeSpec.xmlType }), [firstFlowId], [secondFlowId]);
+  nodeConf.nodeFormConf = clone(nodeSpec.formConfig ?? nodeConf.nodeFormConf ?? template?.nodeFormConf);
+  if (nodeConf.nodeFormConf) {
+    const formIds = new Set((root.nodeConf ?? []).map((node) => node?.nodeFormConf?.id).filter(Boolean));
+    nodeConf.nodeFormConf.id = nodeConf.nodeFormConf.id && !formIds.has(nodeConf.nodeFormConf.id) ? nodeConf.nodeFormConf.id : newFormConfigId(formIds);
+    nodeConf.nodeFormConf.actNodeId = nodeId;
+  }
+  nodeConf.applyConf = isGatewayType(type) ? [] : null;
+  const newXmlNode = createXmlNode(nodeId, nodeName, xmlType, [firstFlowId], [secondFlowId]);
   let nextXml = removeXmlElement(xml, edge.id);
+  if (xmlType.startsWith('cw:')) nextXml = ensureXmlNamespace(nextXml, 'cw', 'http://www.cloudwise.com/BPMN/20220520/MODEL');
   nextXml = removeXmlDiagramElement(nextXml, edge.id);
   nextXml = removeXmlReference(nextXml, edge.sourceRef, 'outgoing', edge.id);
   nextXml = removeXmlReference(nextXml, edge.targetRef, 'incoming', edge.id);
   nextXml = appendXmlFlowReferences(nextXml, edge.sourceRef, 'outgoing', [firstFlowId]);
   nextXml = appendXmlFlowReferences(nextXml, edge.targetRef, 'incoming', [secondFlowId]);
   nextXml = insertBeforeProcessClose(nextXml, `${newXmlNode}${createXmlFlow(firstFlowId, edge.sourceRef, nodeId)}${createXmlFlow(secondFlowId, nodeId, edge.targetRef, { name: edge.name })}`);
-  nextXml = insertBeforeDiagramClose(nextXml, `${createXmlShape(nextXml, nodeId, nodeXmlType({ type, xmlType: nodeSpec.xmlType }), edge.sourceRef, edge.targetRef)}${createXmlEdge(nextXml, firstFlowId, edge.sourceRef, nodeId)}${createXmlEdge(nextXml, secondFlowId, nodeId, edge.targetRef)}`);
+  nextXml = insertBeforeDiagramClose(nextXml, `${createXmlShape(nextXml, nodeId, xmlType, edge.sourceRef, edge.targetRef)}${createXmlEdge(nextXml, firstFlowId, edge.sourceRef, nodeId)}${createXmlEdge(nextXml, secondFlowId, nodeId, edge.targetRef)}`);
   root.processInfo.processXml = nextXml;
   const sourceIndex = root.nodeConf.findIndex((node) => node?.actNodeId === edge.sourceRef);
   updateApplyConf(root, edge.sourceRef, [edge.id], [firstFlowId]);
-  nodeConf.applyConf = [{ actLineId: secondFlowId }];
   root.nodeConf.push(nodeConf);
   text = replaceJsonValue(text, ['processInfo', 'processXml'], nextXml);
   if (sourceIndex >= 0) text = replaceJsonValue(text, ['nodeConf', sourceIndex, 'applyConf'], root.nodeConf[sourceIndex].applyConf);
@@ -477,7 +544,21 @@ function replaceDestination(temp, destination, inPlace) {
   }
 }
 
-function applyPlan(filePath, plan, outPath, inPlace) {
+function cleanupFiles(files, source, destination) {
+  const protectedPaths = new Set([path.resolve(source), path.resolve(destination)]);
+  const removed = [];
+  for (const file of files) {
+    const target = path.resolve(file);
+    if (protectedPaths.has(target)) throw new Error(`Refusing to clean source or output file: ${file}`);
+    if (fs.existsSync(target) && fs.statSync(target).isFile()) {
+      fs.rmSync(target);
+      removed.push(target);
+    }
+  }
+  return removed;
+}
+
+function applyPlan(filePath, plan, outPath, inPlace, cleanup = []) {
   const absolute = path.resolve(filePath);
   const original = fs.readFileSync(absolute);
   assertPlan(plan, original);
@@ -537,12 +618,15 @@ function applyPlan(filePath, plan, outPath, inPlace) {
     if (check.references.missingXmlNodeIds.length || check.references.missingTabIds.length || check.references.missingDiagramNodeIds.length || check.references.missingDiagramFlowIds.length) {
       throw new Error(`Patched file has unresolved references: ${JSON.stringify(check.references)}`);
     }
+    const validationErrors = validate(temp);
+    if (validationErrors.length) throw new Error(`Patched file failed validation:\n- ${validationErrors.join('\n- ')}`);
     replaceDestination(temp, destination, inPlace);
   } catch (error) {
     fs.rmSync(temp, { force: true });
     throw error;
   }
-  return { output: destination, sha256: hash(result, 'sha256'), md5: hash(result, 'md5'), changes: changes.length };
+  const removed = cleanupFiles(cleanup, absolute, destination);
+  return { output: destination, sha256: hash(result, 'sha256'), md5: hash(result, 'md5'), changes: changes.length, cleaned: removed };
 }
 
 async function main(argv) {
@@ -552,9 +636,11 @@ async function main(argv) {
   const outIndex = args.indexOf('--out');
   const outPath = outIndex >= 0 ? args[outIndex + 1] : null;
   const inPlace = args.includes('--in-place');
-  if (!filePath || !planPath || (outIndex >= 0 && !outPath) || (inPlace && outPath)) return usage();
+  const cleanupIndex = args.indexOf('--cleanup');
+  const cleanup = cleanupIndex >= 0 ? args.slice(cleanupIndex + 1).filter((arg) => !arg.startsWith('--')) : [];
+  if (!filePath || !planPath || (outIndex >= 0 && !outPath) || (inPlace && outPath) || (cleanupIndex >= 0 && cleanup.length === 0)) return usage();
   const plan = JSON.parse(decode(fs.readFileSync(path.resolve(planPath))));
-  console.log(JSON.stringify(applyPlan(filePath, plan, outPath, inPlace), null, 2));
+  console.log(JSON.stringify(applyPlan(filePath, plan, outPath, inPlace, cleanup), null, 2));
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

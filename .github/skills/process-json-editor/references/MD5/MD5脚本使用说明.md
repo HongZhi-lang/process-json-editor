@@ -11,7 +11,7 @@
 
 ## 前提条件
 
-- Windows 使用 Windows PowerShell 5.1 或更高版本运行 `md5.ps1`。
+- Windows 使用 Windows PowerShell 5.1 或更高版本运行 `md5.ps1`；流程 JSON 校验入口会调用 skill 内的 Node.js 校验器，因此不受 PowerShell `ConvertFrom-Json` 重复键限制影响。
 - macOS 使用 Terminal 运行 `md5.sh`。首次使用前执行 `chmod +x md5.sh`。
 - 目标目录中只放本流程需要校验的 JSON 文件，例如 `PROC_*.json`、`ADV_*.json`、`SLA_*.json`。
 - 在运行脚本前确认 JSON 内容、编码和换行已经最终确定。生成 MD5 后不得再修改文件内容。

@@ -9,7 +9,9 @@
   },
   "scripts": {
     "index": "node ./src/cli.mjs",
-    "patch": "node ./src/patch.mjs"
+    "patch": "node ./src/patch.mjs",
+    "validate": "node ./src/validate.mjs",
+    "clean": "node ./src/clean.mjs"
   },
   "dependencies": {
     "jsonc-parser": "^3.3.1"

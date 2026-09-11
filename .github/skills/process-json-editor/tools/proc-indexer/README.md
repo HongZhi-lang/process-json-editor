@@ -7,10 +7,33 @@ This directory contains tools for reading and minimally modifying large `PROC_*.
 - Node.js 22 or later
 - Run commands from the repository root, or pass absolute paths.
 
+The tools are cross-platform Node.js `.mjs` programs. PowerShell is not required on macOS/Linux. The `tmp` directory is only for temporary indexes, patch plans, and patched outputs; create it when needed and remove temporary files after review or validation. Do not treat `tmp` results as part of the skill package.
+
+After the result has been reviewed and reported, remove the temporary files explicitly. The cleaner only removes the filenames supplied on the command line and never clears the whole directory.
+
+Windows PowerShell:
+
+```powershell
+node .\.github\skills\process-json-editor\tools\proc-indexer\src\clean.mjs .\tmp process-index.json patch-plan.json process-fixture.json process-result.json
+```
+
+macOS/Linux:
+
+```bash
+node ./.github/skills/process-json-editor/tools/proc-indexer/src/clean.mjs ./tmp process-index.json patch-plan.json process-fixture.json process-result.json
+```
+
 ## 1. Generate a semantic index
 
 ```powershell
 node .\.github\skills\process-json-editor\tools\proc-indexer\src\cli.mjs <path-to-PROC.json> --out .\tmp\process-index.json
+```
+
+macOS/Linux:
+
+```bash
+mkdir -p ./tmp
+node ./.github/skills/process-json-editor/tools/proc-indexer/src/cli.mjs <path-to-PROC.json> --out ./tmp/process-index.json
 ```
 
 The source file is never rewritten. The index includes:
@@ -26,6 +49,12 @@ Query a specific node with its stable ID:
 
 ```powershell
 node .\.github\skills\process-json-editor\tools\proc-indexer\src\cli.mjs <path-to-PROC.json> --node <actNodeId>
+```
+
+macOS/Linux:
+
+```bash
+node ./.github/skills/process-json-editor/tools/proc-indexer/src/cli.mjs <path-to-PROC.json> --node <actNodeId>
 ```
 
 Name lookup is supported, but names may be duplicated. Resolve and use the ID before creating a patch.
@@ -47,8 +76,8 @@ Patch plans are JSON files with `schemaVersion: 1`, an optional source `fileSha2
         "entity": "process",
         "path": "processName"
       },
-      "expectedOldValue": "Incident Management",
-      "newValue": "Incident Management - Internal"
+      "expectedOldValue": "Original Process Name",
+      "newValue": "Updated Process Name"
     }
   ]
 }
@@ -142,6 +171,8 @@ Use a flow ID, use `fromId` and `toId` when exactly one flow connects the two no
 
 The old flow is removed. The patcher creates `source -> new node` and `new node -> old target`, updates XML incoming/outgoing references, and updates the upstream `applyConf`.
 
+Identity fields are regenerated for the inserted node: `isFirst` is reset to `0`, `nodeFormConf.actNodeId` is set to the new node ID, and `nodeFormConf.id` is made unique. Approval nodes use the nearest same-type approval template and emit Cloudwise `cw:singleApprove`/`cw:multiApprove` XML with the required namespace. Gateway conditions are not invented automatically; provide them explicitly and mirror them in XML and `applyConf`.
+
 ### Remove a node and reconnect topology
 
 ```json
@@ -157,15 +188,30 @@ For one incoming and one outgoing flow, the patcher creates a replacement flow a
 
 ## 3. Apply a plan safely
 
-Always test with a copy first:
+Always test with a copy first. Windows PowerShell:
 
 ```powershell
 Copy-Item <path-to-PROC.json> .\tmp\process-fixture.json
 node .\.github\skills\process-json-editor\tools\proc-indexer\src\patch.mjs `
   .\tmp\process-fixture.json `
   .\tmp\patch-plan.json `
-  --out .\tmp\process-result.json
+  --out .\tmp\process-result.json `
+  --cleanup .\tmp\process-index.json .\tmp\patch-plan.json .\tmp\process-fixture.json
 ```
+
+macOS/Linux:
+
+```bash
+mkdir -p ./tmp
+cp <path-to-PROC.json> ./tmp/process-fixture.json
+node ./.github/skills/process-json-editor/tools/proc-indexer/src/patch.mjs \
+  ./tmp/process-fixture.json \
+  ./tmp/patch-plan.json \
+  --out ./tmp/process-result.json \
+  --cleanup ./tmp/process-index.json ./tmp/patch-plan.json ./tmp/process-fixture.json
+```
+
+`--cleanup` files are removed only after the patch is written and re-indexed successfully. If parsing, patching, or validation fails, no cleanup is performed and the temporary files remain for troubleshooting. The source and `--out` result are protected and cannot be listed for cleanup.
 
 The patcher:
 
@@ -181,12 +227,23 @@ The patcher:
 
 The original source remains unchanged when `--out` is used.
 
-For a deliberate final replacement, use a separate validated output first. The current implementation also supports:
+For a deliberate final replacement, use a separate validated output first. The current implementation also supports the following in-place commands.
+
+Windows PowerShell:
 
 ```powershell
 node .\.github\skills\process-json-editor\tools\proc-indexer\src\patch.mjs `
   <path-to-PROC.json> `
   .\tmp\patch-plan.json `
+  --in-place
+```
+
+macOS/Linux:
+
+```bash
+node ./.github/skills/process-json-editor/tools/proc-indexer/src/patch.mjs \
+  <path-to-PROC.json> \
+  ./tmp/patch-plan.json \
   --in-place
 ```
 
@@ -216,6 +273,7 @@ Not implemented:
 - gateway-condition changes;
 - automatic form-field or permission construction;
 - automatic Tab/reference construction;
+- automatic gateway condition construction;
 - automatic execution of the repository’s MD5 package scripts.
 
 Iteration stops at this minimum capability. Complex process-topology editing can be added as a separate feature later.
