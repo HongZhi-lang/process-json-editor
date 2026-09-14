@@ -194,19 +194,19 @@ macOS MD5 命令：
 	-v '<版本号>'
 ```
 
-	## 常见使用问题
+## 常见使用问题
 
-	### Windows
+### Windows
 
-	ADV_文件的命名规则是：`^ADV_(?<processDefKey>\w+)_(?<version>\d+)_(?<uuid>[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})\.json$`
+ADV_文件的命名规则是：`^ADV_(?<processDefKey>\w+)_(?<version>\d+)_(?<uuid>[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})\.json$`
 
-	在Windows环境中，**`*`** 不允许出现在文件名中，默认会替换为 **`_`** 。生成 md5 脚本中已经做过特殊处理，打为tar包后，还需要在包内手动改为`*`号
+在Windows环境中，**`*`** 不允许出现在文件名中，默认会替换为 **`_`** 。生成 md5 脚本中已经做过特殊处理，打为tar包后，还需要在包内手动改为`*`号
 
-	### MacOS
+### MacOS
 
-	MacOS 在处理压缩包时，**系统会添加一些附加信息文件**，导致最终生成的tar包不符合规则。
+MacOS 在处理压缩包时，**系统会添加一些附加信息文件**，导致最终生成的tar包不符合规则。
 
-	目前确认使用`keka`，勾选 **`排除Mac资源文件 / Exclude Mac resource forks`** ，生成的tar包覆合规则
+目前确认使用`keka`，勾选 **`排除Mac资源文件 / Exclude Mac resource forks`** ，生成的tar包覆合规则
 
 macOS 打包时，系统可能添加资源分叉等附加文件。使用 Keka 时勾选 `排除 Mac 资源文件 / Exclude Mac resource forks`，避免 tar 包中出现额外文件。
 
