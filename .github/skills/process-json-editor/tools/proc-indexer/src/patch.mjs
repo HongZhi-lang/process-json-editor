@@ -226,11 +226,18 @@ function diagramEndpoints(xml, sourceId, targetId) {
 function createXmlShape(xml, nodeId, xmlType, sourceId, targetId) {
   const source = diagramBounds(xml, sourceId) ?? { x: 0, y: 0, width: 100, height: 80 };
   const target = diagramBounds(xml, targetId) ?? { x: source.x + 240, y: source.y, width: 100, height: 80 };
-  const width = 100;
-  const height = 80;
+  const localType = xmlType.includes(':') ? xmlType.split(':').at(-1) : xmlType;
+  const gateway = ['exclusiveGateway', 'parallelGateway', 'inclusiveGateway'].includes(localType);
+  const event = ['startEvent', 'endEvent'].includes(localType);
+  const width = gateway ? 50 : event ? 36 : 100;
+  const height = gateway ? 50 : event ? 36 : 80;
   const x = Math.round((source.x + source.width + target.x - width) / 2);
-  const y = Math.round((source.y + target.y) / 2);
-  return `    <bpmndi:BPMNShape id="${escapeXmlAttribute(nodeId)}_di" bpmnElement="${escapeXmlAttribute(nodeId)}">\n      <dc:Bounds x="${x}" y="${y}" width="${width}" height="${height}" />\n    </bpmndi:BPMNShape>\n`;
+  const sourceCenterY = source.y + source.height / 2;
+  const targetCenterY = target.y + target.height / 2;
+  const y = Math.round((sourceCenterY + targetCenterY - height) / 2);
+  const marker = localType === 'exclusiveGateway' ? ' isMarkerVisible="true"' : '';
+  const label = gateway ? `\n      <bpmndi:BPMNLabel>\n        <dc:Bounds x="${x - 20}" y="${y + height + 7}" width="90" height="14" />\n      </bpmndi:BPMNLabel>` : '';
+  return `    <bpmndi:BPMNShape id="${escapeXmlAttribute(nodeId)}_di" bpmnElement="${escapeXmlAttribute(nodeId)}"${marker}>\n      <dc:Bounds x="${x}" y="${y}" width="${width}" height="${height}" />${label}\n    </bpmndi:BPMNShape>\n`;
 }
 
 function createXmlEdge(xml, flowId, sourceId, targetId) {
@@ -423,7 +430,8 @@ function insertNode(root, text, operation) {
   nextXml = appendXmlFlowReferences(nextXml, edge.sourceRef, 'outgoing', [firstFlowId]);
   nextXml = appendXmlFlowReferences(nextXml, edge.targetRef, 'incoming', [secondFlowId]);
   nextXml = insertBeforeProcessClose(nextXml, `${newXmlNode}${createXmlFlow(firstFlowId, edge.sourceRef, nodeId)}${createXmlFlow(secondFlowId, nodeId, edge.targetRef, { name: edge.name })}`);
-  nextXml = insertBeforeDiagramClose(nextXml, `${createXmlShape(nextXml, nodeId, xmlType, edge.sourceRef, edge.targetRef)}${createXmlEdge(nextXml, firstFlowId, edge.sourceRef, nodeId)}${createXmlEdge(nextXml, secondFlowId, nodeId, edge.targetRef)}`);
+  nextXml = insertBeforeDiagramClose(nextXml, createXmlShape(nextXml, nodeId, xmlType, edge.sourceRef, edge.targetRef));
+  nextXml = insertBeforeDiagramClose(nextXml, `${createXmlEdge(nextXml, firstFlowId, edge.sourceRef, nodeId)}${createXmlEdge(nextXml, secondFlowId, nodeId, edge.targetRef)}`);
   root.processInfo.processXml = nextXml;
   const sourceIndex = root.nodeConf.findIndex((node) => node?.actNodeId === edge.sourceRef);
   updateApplyConf(root, edge.sourceRef, [edge.id], [firstFlowId]);

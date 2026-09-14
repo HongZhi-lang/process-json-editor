@@ -173,6 +173,8 @@ The old flow is removed. The patcher creates `source -> new node` and `new node 
 
 Identity fields are regenerated for the inserted node: `isFirst` is reset to `0`, `nodeFormConf.actNodeId` is set to the new node ID, and `nodeFormConf.id` is made unique. Approval nodes use the nearest same-type approval template and emit Cloudwise `cw:singleApprove`/`cw:multiApprove` XML with the required namespace. Gateway conditions are not invented automatically; provide them explicitly and mirror them in XML and `applyConf`.
 
+Generated BPMN-DI geometry follows BPMN node conventions: gateways are square `50x50` shapes, events are `36x36`, and tasks are `100x80`. Exclusive gateways include `isMarkerVisible="true"`. The node shape is inserted before edge waypoints are calculated, so incoming and outgoing lines terminate at the actual shape boundary.
+
 ### Remove a node and reconnect topology
 
 ```json
